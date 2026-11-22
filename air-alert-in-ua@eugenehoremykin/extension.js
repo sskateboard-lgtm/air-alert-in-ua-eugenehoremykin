@@ -1,7 +1,6 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import Gst from 'gi://Gst?version=1.0';
 import Pango from 'gi://Pango';
 import Soup from 'gi://Soup?version=3.0';
 import St from 'gi://St';
@@ -15,7 +14,17 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
-Gst.init(null);
+let gstModulePromise;
+
+function loadGst() {
+  if (!gstModulePromise) {
+    gstModulePromise = import('gi://Gst?version=1.0').then(({default: Gst}) => {
+      Gst.init(null);
+      return Gst;
+    });
+  }
+  return gstModulePromise;
+}
 
 const API_URL = 'https://api.alerts.in.ua/v1/alerts/active.json';
 const PUBLIC_ALERTS_URL = 'https://ubilling.net.ua/aerialalerts/';
@@ -1163,12 +1172,12 @@ export default class AirAlertExtension extends Extension {
     const soundFile = Gio.File.new_for_path(GLib.build_filenamev([
       this.path, 'data', `alert-morse-${morseWord}.mp3`,
     ]));
-    try {
-      this._playAudioFile(soundFile);
-      this._startMorseBlink(morseWord);
-    } catch (error) {
-      logError(error, `[${this.uuid}] Could not play alert tone`);
-    }
+    this._playAudioFile(soundFile)
+      .then(played => {
+        if (played && this._iconState.startsWith('alert:'))
+          this._startMorseBlink(morseWord);
+      })
+      .catch(error => logError(error, `[${this.uuid}] Could not play alert tone`));
   }
 
   _playVoiceAlert(color) {
@@ -1200,48 +1209,61 @@ export default class AirAlertExtension extends Extension {
       this._pulseTimer = this._pulse(1200, [1, 0.42]);
       return;
     }
-    try {
-      this._playAudioFile(soundFile);
-      this._pulseTimer = this._pulse(1200, [1, 0.42]);
-    } catch (error) {
-      logError(error, `[${this.uuid}] Could not play voice alert`);
-      this._pulseTimer = this._pulse(1200, [1, 0.42]);
-    }
+    this._playAudioFile(soundFile)
+      .then(played => {
+        if (played && this._iconState.startsWith('alert:'))
+          this._pulseTimer = this._pulse(1200, [1, 0.42]);
+      })
+      .catch(error => {
+        logError(error, `[${this.uuid}] Could not play voice alert`);
+        if (this._iconState.startsWith('alert:'))
+          this._pulseTimer = this._pulse(1200, [1, 0.42]);
+      });
   }
 
-  _playSirenBurst(burstIndex) {
+  _playSirenBurst(repeatIndex) {
     if (!this._iconState.startsWith('alert:')) {
       this._stopAlertTone();
       return;
     }
-    if (burstIndex >= 3) {
+    if (repeatIndex >= 2) {
       this._stopAlertTone();
       if (this._iconState.startsWith('alert:'))
         this._pulseTimer = this._pulse(1200, [1, 0.42]);
       return;
     }
     const soundFile = Gio.File.new_for_path(GLib.build_filenamev([
-      this.path, 'data', 'alert-siren-8s.mp3',
+      this.path, 'data', 'alert-siren.mp3',
     ]));
-    try {
-      this._playAudioFile(soundFile);
-    } catch (error) {
-      this._stopAlertTone();
-      logError(error, `[${this.uuid}] Could not play siren`);
-      if (this._iconState.startsWith('alert:'))
-        this._pulseTimer = this._pulse(1200, [1, 0.42]);
-      return;
-    }
-    this._sirenBurstTimer = GLib.timeout_add_seconds(
-      GLib.PRIORITY_DEFAULT, burstIndex < 2 ? 10 : 8, () => {
-        this._sirenBurstTimer = 0;
-        this._playSirenBurst(burstIndex + 1);
-        return GLib.SOURCE_REMOVE;
+    this._playAudioFile(soundFile, () => {
+      if (!this._iconState.startsWith('alert:'))
+        return;
+      if (repeatIndex >= 1) {
+        this._playSirenBurst(repeatIndex + 1);
+        return;
+      }
+      this._sirenBurstTimer = GLib.timeout_add_seconds(
+        GLib.PRIORITY_DEFAULT, 1, () => {
+          this._sirenBurstTimer = 0;
+          this._playSirenBurst(repeatIndex + 1);
+          return GLib.SOURCE_REMOVE;
+        });
+    })
+      .catch(error => {
+        this._stopAlertTone();
+        logError(error, `[${this.uuid}] Could not play siren`);
+        if (this._iconState.startsWith('alert:'))
+          this._pulseTimer = this._pulse(1200, [1, 0.42]);
       });
   }
 
-  _playAudioFile(soundFile) {
+  async _playAudioFile(soundFile, onEos = null) {
     this._stopAudioPlayback();
+    const playbackGeneration = this._audioPlaybackGeneration;
+    const Gst = await loadGst();
+    if (playbackGeneration !== this._audioPlaybackGeneration)
+      return false;
+
     const pipeline = Gst.ElementFactory.make('playbin', null);
     if (!pipeline)
       throw new Error('GStreamer playbin is unavailable');
@@ -1250,7 +1272,9 @@ export default class AirAlertExtension extends Extension {
     const bus = pipeline.get_bus();
     bus.add_signal_watch();
     this._audioPipeline = pipeline;
+    this._audioGst = Gst;
     this._audioBus = bus;
+    this._audioOnEos = onEos;
     this._audioBusMessageId = bus.connect('message', (_bus, message) => {
       if (this._audioPipeline !== pipeline)
         return;
@@ -1259,7 +1283,9 @@ export default class AirAlertExtension extends Extension {
         this._stopAudioPlayback();
         logError(error, `[${this.uuid}] GStreamer playback failed: ${debug}`);
       } else if (message.type === Gst.MessageType.EOS) {
+        const handleEos = this._audioOnEos;
         this._stopAudioPlayback();
+        handleEos?.();
       }
     });
 
@@ -1267,14 +1293,19 @@ export default class AirAlertExtension extends Extension {
       this._stopAudioPlayback();
       throw new Error('GStreamer could not start audio playback');
     }
+    return true;
   }
 
   _stopAudioPlayback() {
+    this._audioPlaybackGeneration = (this._audioPlaybackGeneration ?? 0) + 1;
+    this._audioOnEos = null;
     if (!this._audioPipeline)
       return;
 
+    const Gst = this._audioGst;
     const pipeline = this._audioPipeline;
     this._audioPipeline = null;
+    this._audioGst = null;
     if (this._audioBus && this._audioBusMessageId)
       this._audioBus.disconnect(this._audioBusMessageId);
     this._audioBus?.remove_signal_watch();
