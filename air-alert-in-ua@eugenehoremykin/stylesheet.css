@@ -1,0 +1,75 @@
+.air-alert-panel-icon {
+  transition: color 260ms ease, opacity 700ms ease;
+}
+
+.air-alert-popup {
+  width: 504px;
+  height: 428px;
+  padding: 12px;
+  spacing: 6px;
+}
+
+.air-alert-heading {
+  font-size: 1.05em;
+  font-weight: bold;
+}
+
+.air-alert-footer {
+  width: 480px;
+  height: 28px;
+  spacing: 6px;
+}
+
+.air-alert-toolbar {
+  width: 480px;
+  height: 56px;
+}
+
+.air-alert-action-buttons {
+  width: 28px;
+  height: 56px;
+  spacing: 0;
+}
+
+.air-alert-action-button {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  margin: 0;
+  border-radius: 5px;
+}
+
+.air-alert-action-button:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.air-alert-action-icon {
+  width: 18px;
+  height: 18px;
+  icon-size: 18px;
+}
+
+.air-alert-status {
+  width: 480px;
+  height: 20px;
+  max-height: 20px;
+  color: #bdc9cc;
+  font-size: 0.9em;
+}
+
+.air-alert-map-container {
+  width: 480px;
+  height: 282px;
+}
+
+.air-alert-tooltip {
+  max-width: 220px;
+  padding: 6px 8px;
+  color: #e7eeee;
+  background-color: rgba(18, 22, 26, 0.98);
+  border: 1px solid rgba(220, 232, 234, 0.35);
+  border-radius: 5px;
+  font-size: 0.85em;
+}

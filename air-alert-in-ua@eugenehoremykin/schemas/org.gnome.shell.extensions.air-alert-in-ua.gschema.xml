@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.air-alert-in-ua" path="/org/gnome/shell/extensions/air-alert-in-ua/">
+    <key name="api-token" type="s">
+      <default>''</default>
+      <summary>API token for alerts.in.ua</summary>
+    </key>
+    <key name="home-oblast" type="s">
+      <default>''</default>
+      <summary>Home oblast used to identify nearby alerts</summary>
+    </key>
+    <key name="home-district" type="s">
+      <default>''</default>
+      <summary>Home district used to identify local alerts</summary>
+    </key>
+    <key name="ui-language" type="s">
+      <default>'auto'</default>
+      <summary>Interface language: automatic, Ukrainian, English, German, Polish, Chinese, or Japanese</summary>
+    </key>
+    <key name="sound-mode" type="s">
+      <default>'morse'</default>
+      <summary>Alert sound mode: off, Morse code, or siren</summary>
+    </key>
+    <key name="voice-alert-level" type="s">
+      <default>'all'</default>
+      <summary>Voice alert level: standard, yellow-only, red-only, or all levels</summary>
+    </key>
+  </schema>
+</schemalist>

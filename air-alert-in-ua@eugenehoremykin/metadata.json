@@ -1,0 +1,11 @@
+{
+  "uuid": "air-alert-in-ua@eugenehoremykin",
+  "name": "air-alert-in-ua",
+  "description": "Мапа повітряних тривог України у панелі GNOME",
+  "license": "GPL-2.0-or-later",
+  "version": 1,
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "settings-schema": "org.gnome.shell.extensions.air-alert-in-ua",
+  "gettext-domain": "air-alert-in-ua",
+  "developer-name": "Eugene Horemykin"
+}
