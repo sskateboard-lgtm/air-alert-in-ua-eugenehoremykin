@@ -483,7 +483,7 @@ export default class AirAlertExtension extends Extension {
 
   _buildMenu() {
     const box = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'air-alert-popup',
     });
     this._menuBox = box;
@@ -496,7 +496,7 @@ export default class AirAlertExtension extends Extension {
       x_expand: true,
     });
     const actionButtons = new St.BoxLayout({
-      vertical: true,
+      orientation: Clutter.Orientation.VERTICAL,
       style_class: 'air-alert-action-buttons',
     });
     this._actionButtons = actionButtons;

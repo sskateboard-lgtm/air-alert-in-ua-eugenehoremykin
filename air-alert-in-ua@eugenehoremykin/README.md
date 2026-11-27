@@ -6,8 +6,15 @@ The extension code is licensed under GPL-2.0-or-later; see [LICENSE](./LICENSE).
 
 ## Requirements
 
-- GNOME Shell 45 through 50
+- GNOME Shell 45 through 51
 - Optional alerts.in.ua API token from <https://alerts.in.ua/api-request>
+
+## Release notes
+
+### 1.0.3
+
+- Add GNOME Shell 51 support.
+- Update vertical box layouts to use the supported orientation property, fixing extension loading on GNOME 51.
 
 Without a token, the extension uses the public oblast-level feed at <https://ubilling.net.ua/aerialalerts/>. A configured alerts.in.ua token enables more detailed alert data. The extension polls every two minutes. Direct district alerts support off, Morse, siren, and custom voice modes. Morse repeats eight times; the siren recording `data/alert-siren.mp3` plays in full twice, with a 1-second pause between plays. Voice recordings are loaded from `data/voice/` using `alert-voice-<language-code>-<all|yellow|red>.mp3`. In voice mode, “Standard” always uses the `all` recording; “Yellow only” and “Red only” play only the matching danger-level recording; “All levels” uses `yellow` or `red` according to the active danger level. Preferences has separate Settings and About pages. The About page follows the selected interface language, including Auto; 41 interface languages are available in preferences, with Ukrainian and English pinned immediately after Auto. Less common technical error messages fall back to English. Alert information may be delayed and must not be used as the sole source for emergency decisions.
 
